@@ -1,0 +1,377 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+'''
+@File    :   saveLabel.py
+@Time    :   2024/12/12 14:14:21
+@Author  :   firstElfin 
+@Version :   1.0
+@Desc    :   None
+'''
+
+import json
+from typing import Union, Dict, List, Optional
+from pathlib import Path
+from lxml import etree  # type: ignore
+from bs4 import BeautifulSoup
+
+__all__ = [
+    'save_json','save_labelme_label','save_yolo_label', 'save_voc_label',
+    'voc_show', 'yolo_show', 'coco_show', 'labelme_show'
+]
+
+INS_sample = [
+    {
+        "name": "fzhenchui",
+        "pose": "Unspecified",
+        "truncated": 0,
+        "difficult": 0,
+        "bndbox": {
+            "xmin": 163,
+            "ymin": 288,
+            "xmax": 387,
+            "ymax": 339
+        },
+        "score": 0.9999999
+    }
+]
+
+VOC_HEADER = {
+    "folder": "images",
+    "filename": "000001.jpg",
+    "path": "images/000001.jpg",
+    "source": {
+        "database": "Unknown"
+    },
+    "size": {
+        "width": 100,
+        "height": 200,
+        "depth": 3
+    },
+    "segmented": 0
+}
+
+
+def save_json(json_file: Union[str, Path], data: Dict):
+    Path(json_file).parent.mkdir(parents=True, exist_ok=True)
+    with open(json_file, 'w+', encoding='utf-8') as f:
+        json.dump(data, f, indent=4, ensure_ascii=False)
+
+
+def save_labelme_label(label_path: Union[str, Path], label_dict: Dict):
+    """保存labelme格式的标签文件
+
+    :param Union[str, Path] label_path: labelme格式的标签文件路径
+    :param Dict label_dict: labelme格式的标签文件内容
+    """
+    save_json(label_path, label_dict)
+
+
+def save_yolo_label(label_path: Union[str, Path], label_list: list[Union[str, list]]):
+    """支持自动化保存YOLO格式的标签文件
+
+    :param str label_path: 文件路径
+    :param list label_list: 文件内容, 格式为[[class_id, x_center, y_center, width, height],...]
+    """
+    Path(label_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(label_path, 'w+', encoding='utf-8') as f:
+        for label in label_list:
+            line_str = " ".join(str(i) for i in label) if isinstance(label, list) else str(label)
+            if not line_str.endswith('\n'):
+                line_str += '\n'
+            f.write(line_str)
+
+
+def voc_generate(voc_header: Optional[Dict] = None, objects: Optional[list[dict]] = None, other_keys: List = []):
+    """生成 voc 格式的标注文件
+
+    :param dict voc_header: voc格式的文件头信息(非实例信息), defaults to None
+    :param list[dict] objects: 实例信息, defaults to None
+    :param list other_keys: 自定义实例属性列表, defaults to []
+    """
+
+    if objects is None:
+        objects = INS_sample
+    if voc_header is None:
+        voc_header = VOC_HEADER
+    
+    annotation = BeautifulSoup(features="xml")
+
+    # 创建根元素 <annotation>
+    annotation_tag = annotation.new_tag("annotation")
+    annotation.append(annotation_tag)
+
+    # 图片相关信息
+    folder_tag = annotation.new_tag("folder")
+    folder_tag.string = voc_header["folder"]
+    annotation_tag.append(folder_tag)
+
+    filename_tag = annotation.new_tag("filename")
+    filename_tag.string = voc_header["filename"]
+    annotation_tag.append(filename_tag)
+
+    path_tag = annotation.new_tag("path")
+    path_tag.string = voc_header["path"]
+    annotation_tag.append(path_tag)
+
+    source_tag = annotation.new_tag("source")
+    annotation_tag.append(source_tag)
+
+    database_tag = annotation.new_tag("database")
+    database_tag.string = voc_header["source"]["database"]
+    source_tag.append(database_tag)
+
+    size_tag = annotation.new_tag("size")
+    annotation_tag.append(size_tag)
+
+    width_tag = annotation.new_tag("width")
+    width_tag.string = str(voc_header["size"]["width"])
+    size_tag.append(width_tag)
+
+    height_tag = annotation.new_tag("height")
+    height_tag.string = str(voc_header["size"]["height"])
+    size_tag.append(height_tag)
+
+    depth_tag = annotation.new_tag("depth")
+    depth_tag.string = str(voc_header["size"]["depth"])  # 假设是 RGB 彩图
+    size_tag.append(depth_tag)
+
+    segmented_tag = annotation.new_tag("segmented")
+    segmented_tag.string = str(voc_header["segmented"])
+    annotation_tag.append(segmented_tag)
+
+    # 物体相关信息
+    for obj in objects:
+        object_tag = annotation.new_tag("object")
+        annotation_tag.append(object_tag)
+
+        name_tag = annotation.new_tag("name")
+        name_tag.string = obj["name"]
+        object_tag.append(name_tag)
+
+        pose_tag = annotation.new_tag("pose")
+        pose_tag.string = "Unspecified"
+        object_tag.append(pose_tag)
+
+        truncated_tag = annotation.new_tag("truncated")
+        truncated_tag.string = str(obj["truncated"])
+        object_tag.append(truncated_tag)
+
+        difficult_tag = annotation.new_tag("difficult")
+        difficult_tag.string = str(obj["difficult"])
+        object_tag.append(difficult_tag)
+
+        bndbox_tag = annotation.new_tag("bndbox")
+        object_tag.append(bndbox_tag)
+
+        xmin_tag = annotation.new_tag("xmin")
+        xmin_tag.string = str(obj["bndbox"]["xmin"])
+        bndbox_tag.append(xmin_tag)
+
+        ymin_tag = annotation.new_tag("ymin")
+        ymin_tag.string = str(obj["bndbox"]["ymin"])
+        bndbox_tag.append(ymin_tag)
+
+        xmax_tag = annotation.new_tag("xmax")
+        xmax_tag.string = str(obj["bndbox"]["xmax"])
+        bndbox_tag.append(xmax_tag)
+
+        ymax_tag = annotation.new_tag("ymax")
+        ymax_tag.string = str(obj["bndbox"]["ymax"])
+        bndbox_tag.append(ymax_tag)
+
+        if other_keys is None:
+            continue
+        for key in other_keys:
+            if key not in obj:
+                continue
+            key_tag = annotation.new_tag(key)
+            key_tag.string = str(obj[key])
+            object_tag.append(key_tag)
+
+    return annotation
+
+
+def save_voc_label(
+        xml_file: Union[str, Path],
+        voc_header: Optional[Dict] = None,
+        objects: Optional[list[dict]]= None,
+        other_keys: List = []):
+    """保存 voc 格式的标注文件
+
+    :param str xml_file: 保存的文件路径
+    :param dict voc_header: 文件基础信息, defaults to None
+    :param list[dict] objects: 实例的列表, 元素是实例字典, defaults to None
+    :param list other_keys: 自定义实例属性列表, defaults to None
+    """
+    Path(xml_file).parent.mkdir(parents=True, exist_ok=True)
+    if voc_header is None:
+        voc_header = VOC_HEADER
+    if objects is None:
+        objects = voc_header["object"] if "object" in voc_header else []
+
+    annotation = voc_generate(voc_header, objects, other_keys)
+    lxml_tree = etree.ElementTree(etree.fromstring(str(annotation).encode("utf-8")))
+    with open(xml_file, "wb") as f:
+        lxml_tree.write(f, pretty_print=True, encoding="utf-8", xml_declaration=True)
+
+
+def voc_show(voc_header: Optional[Dict] = None, objects: Optional[list[dict]] = None, other_keys: List = []):
+    annotation = voc_generate(voc_header, objects, other_keys)
+    print(annotation.prettify(formatter="html"))
+
+
+def yolo_show():
+    yolo_list = [
+        [0, 0.5, 0.5, 0.56, 0.8],
+        [1, 0.25, 0.5, 0.23, 0.65],
+    ]
+    print("cls_id, x_center, y_center, width, height\n", yolo_list)
+    return yolo_list
+
+
+def coco_show():
+    coco_dict = {
+        "info": {
+            "description": "Example COCO dataset",
+            "url": "https://github.com/cocodataset/cocoapi",
+            "version": "1.0",
+            "year": 2014,
+            "contributor": "COCO Consortium",
+            "date_created": "2019/05/01"
+        },
+        "licenses": [
+            {
+                "url": "http://creativecommons.org/licenses/by-nc-sa/2.0/",
+                "id": 1,
+                "name": "Attribution-NonCommercial-ShareAlike License"
+            }
+        ],
+        "images": [
+            {
+                "license": 1,
+                "file_name": "000000397133.jpg",
+                "coco_url": "http://images.cocodataset.org/val2017/000000397133.jpg",
+                "height": 427,
+                "width": 640,
+                "date_captured": "2013-11-14 17:02:52",
+                "flickr_url": "http://farm7.staticflickr.com/6116/6255196340_da26cf2c9e_z.jpg",
+                "id": 397133
+            },
+            {
+                "license": 1,
+                "file_name": "000000037777.jpg",
+                "coco_url": "http://images.cocodataset.org/val2017/000000037777.jpg",
+                "height": 427,
+                "width": 640,
+                "date_captured": "2013-11-14 17:02:52",
+                "flickr_url": "http://farm9.staticflickr.com/8041/8024364248_4e5a7e36c3_z.jpg",
+                "id": 37777
+            }
+        ],
+        "annotations": [
+            {
+                "segmentation": [
+                    [
+                        192.81,
+                        247.09,
+                        192.81,
+                        230.51,
+                        176.23,
+                        223.93,
+                        176.23,
+                        207.35,
+                        192.81,
+                        200.77,
+                        192.81,
+                        247.09
+                    ]
+                ],
+                "area": 1035.749,
+                "iscrowd": 0,
+                "image_id": 397133,
+                "bbox": [
+                    176.23,
+                    200.77,
+                    16.58,
+                    6.57
+                ],
+                "category_id": 18,
+                "id": 42986
+            },
+            {
+                "segmentation": [
+                    [
+                        325.12,
+                        247.09,
+                        325.12,
+                        230.51,
+                        308.54,
+                        223.93,
+                        308.54,
+                        207.35,
+                        325.12,
+                        200.77,
+                        325.12,
+                        247.09
+                    ]
+                ],
+                "area": 1035.749,
+                "iscrowd": 0,
+                "image_id": 397133,
+                "bbox": [
+                    308.54,
+                    200.77,
+                    16.58,
+                    6.57
+                ],
+                "category_id": 18,
+                "id": 42987
+            }
+        ],
+        "categories": [
+            {
+                "supercategory": "person",
+                "id": 18,
+                "name": "person"
+            }
+        ]
+    }
+    print(coco_dict)
+    return coco_dict
+
+
+def labelme_show():
+    show_dict = {
+        "version": "4.5.6",
+        "flags": {},
+        "shapes": [
+            {
+                "label": "car",
+                "points": [
+                    [100.0, 100.0],
+                    [200.0, 100.0],
+                    [200.0, 200.0],
+                    [100.0, 200.0]
+                ],
+                "group_id": None,
+                "shape_type": "polygon",
+                "flags": {}
+            },
+            {
+                "label": "person",
+                "points": [
+                    [300.0, 300.0],
+                    [654.0, 400.0]
+                ],
+                "group_id": None,
+                "shape_type": "rectangle",
+                "flags": {}
+            }
+        ],
+        "imagePath": "example.jpg",
+        "imageData": None,
+        "imageHeight": 300,
+        "imageWidth": 400
+    }
+    print(show_dict)
+
