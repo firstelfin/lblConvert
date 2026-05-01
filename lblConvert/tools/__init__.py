@@ -4,6 +4,11 @@
 # @time: 2026/04/29 21:53:48
 # @desc: 基础工具类
 
+import os
+cpu_count = os.cpu_count()
+CPU_KERNEL_NUM = 8 if cpu_count is None else cpu_count
+IMG_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm', '.tif', '.tiff', '.webp')
+
 from .readLbl import *
 from .saveLbl import *
 
