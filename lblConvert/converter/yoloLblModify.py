@@ -5,6 +5,7 @@
 
 import yaml
 import shutil
+import hashlib
 from copy import deepcopy
 from pathlib import Path
 from loguru import logger
@@ -32,7 +33,7 @@ class YoloLabelExclude(object):
     NOTE: 标签转换使用__call__方法, 传入参数为新的path地址, 是否复制图片
 
     Example:
-        >>> from codeUtils.labelOperation.yoloLabelExclude import YoloLabelExclude
+        >>> from lblConvert.converter import YoloLabelExclude
         >>> include_classes = [2,4,8]
         >>> data_yaml = 'path/to/old.yaml'
         >>> yolo_label_exclude = YoloLabelExclude(include_classes, data_yaml)
@@ -50,7 +51,8 @@ class YoloLabelExclude(object):
         self.new_names = {i: self.data['names'][v] for i, v in enumerate(include_classes)}
         self.data_root = Path(self.data['path']).absolute()
         self.errors = []
-        self.exclude_title = "_".join([str(i) for i in include_classes])
+        exclude_title = "_".join([str(i) for i in include_classes])
+        self.exclude_title = hashlib.md5(exclude_title.encode('utf-8')).hexdigest()
 
     def load_yaml(self):
         data = yaml.load(open(self.data_yaml, 'r'), Loader=yaml.FullLoader)
@@ -180,13 +182,14 @@ class YoloLabelExclude(object):
 
         for subset in all_subsets:
             # 初始化每个子集的配置
-            lbl_dir = self.data_root / str(subset) / 'labels'
-            img_dir = self.data_root / str(subset) / 'images'
+            img_dir = self.data_root / str(subset)
+            lbl_dir = self.data_root / "labels" / str(subset)[7:]
+
             if cp_img:
                 if dst_dir is None:
                     raise ValueError("save_dir must be set when cp_img is True.")
-                img_save_dir = Path(dst_dir) / str(subset) / 'images'
-                lbl_save_dir = Path(dst_dir) / str(subset) / 'labels'
+                img_save_dir = Path(dst_dir) / str(subset)
+                lbl_save_dir = Path(dst_dir) / 'labels' / str(subset)[7:]
                 img_save_dir.mkdir(parents=True, exist_ok=True)
                 lbl_save_dir.mkdir(parents=True, exist_ok=True)
             else:

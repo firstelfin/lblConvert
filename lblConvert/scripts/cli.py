@@ -9,7 +9,7 @@ from lblConvert.converter import *
 from lblConvert.tools import statitic_gen_names
 
 
-def elfin():
+def lbl():
     print("Welcome to elfin's label operation tool!")
     args = set_args()
     if args.mode == "labelme2yolo":

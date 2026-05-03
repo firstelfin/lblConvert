@@ -173,7 +173,7 @@ class DetConverter(ABC):
             radiance: bool = True,
             mode: Literal["semantic_refer", "long_edge_refer", "opencv_refer"] = "semantic_refer",
         ) -> dict:
-        u"""从标准DOTA格式的四点坐标中获取顺时针方向的角度.
+        r"""从标准DOTA格式的四点坐标中获取顺时针方向的角度.
             - DOTA, YOLO都直接支持原始四个点的坐标, 无需转换, 无需角度计算
 
         :param list[list[int | float]] points: 四个坐标点
@@ -803,7 +803,7 @@ def labelme2yolo(lbl_dir: Union[PathStr, List[PathStr]], dst_dir: PathStr,
     Example:
 
     ```python
-    >>> from codeUtils.labelOperation import labelme2yolo
+    >>> from lblConvert.converter import labelme2yolo
     >>> labelme2yolo(
     ...     lbl_dir=Path("/Users/elfindan/datasets/coco128/jsons"),
     ...     dst_dir=Path("/Users/elfindan/datasets/coco128/yolo2"),
@@ -834,7 +834,7 @@ def labelme2voc(lbl_dir: Union[PathStr, List[PathStr]], dst_dir: PathStr,
     Example:
 
     ```python
-    >>> from codeUtils.labelOperation import labelme2voc
+    >>> from lblConvert.converter import labelme2voc
     >>> labelme2voc(
     ...     lbl_dir=Path("/Users/elfindan/datasets/coco128/jsons"),
     ...     dst_dir=Path("/Users/elfindan/datasets/coco128/xmls2")
@@ -867,7 +867,7 @@ def labelme2coco(lbl_dir: Union[PathStr, List[PathStr]], dst_dir: PathStr,
     Example:
 
     ```python
-    >>> from codeUtils.labelOperation import labelme2coco
+    >>> from lblConvert.converter import labelme2coco
     >>> labelme2coco(
     ...     lbl_dir=Path("datasets/coco128/jsons"),
     ...     img_dir=Path("datasets/coco128/images"),
@@ -895,6 +895,13 @@ def labelme2coco(lbl_dir: Union[PathStr, List[PathStr]], dst_dir: PathStr,
 # YOLO数据集转其他数据集
 
 class DetYOLOConverter(DetConverter):
+    """YOLO格式数据集转换器
+    
+    数据集格式要求:
+        1. images文件夹存放图像文件, images下是子文件夹, 存放不同的子集图像文件夹
+        2. labels文件夹存放标签文件, labels下是子文件夹, 存放对应的子集标签文件夹
+        3. 标签文件名与图像文件名相同, 后缀为.txt
+    """
 
     def __init__(
             self, src_dir: Path, dst_dir: Path, split: str = 'train',
@@ -931,7 +938,7 @@ def yolo2labelme(src_dir: Path, dst_dir: Path, names: Union[str, dict]) -> None:
     Example:
 
     ```python
-    >>> from codeUtils.labelOperation import yolo2labelme
+    >>> from lblConvert.converter import yolo2labelme
     >>> yolo2labelme(
     ...     src_dir=Path("datasets/coco128/"),
     ...     dst_dir=Path("datasets/coco128/jsons"),
@@ -963,7 +970,7 @@ def yolo2voc(src_dir: Path, dst_dir: Path, names: Union[str, dict]) -> None:
     Example:
 
     ```python
-    >>> from codeUtils.labelOperation import yolo2voc
+    >>> from lblConvert.converter import yolo2voc
     >>> yolo2voc(
     ...     src_dir=Path("datasets/coco128/"),
     ...     dst_dir=Path("datasets/coco128/xmls"),
@@ -1003,7 +1010,7 @@ def yolo2coco(src_dir: Path, dst_dir: Path, names: Union[str, dict], use_link: b
     Example:
 
     ```python
-    >>> from codeUtils.labelOperation import yolo2coco
+    >>> from lblConvert.converter import yolo2coco
     >>> yolo2coco(
     ...     src_dir=Path("datasets/coco128/"),
     ...     dst_dir=Path("datasets/coco128/coco"),
@@ -1071,7 +1078,7 @@ def voc2labelme(lbl_dir: Union[PathStr, List[PathStr]], dst_dir: PathStr,
     Example:
 
     ```python
-    >>> from codeUtils.labelOperation import voc2labelme
+    >>> from lblConvert.converter import voc2labelme
     >>> voc2labelme(
     ...     lbl_dir=Path("/Users/elfindan/datasets/coco128/xmls"),
     ...     dst_dir=Path("/Users/elfindan/datasets/coco128/jsons3"),
@@ -1097,7 +1104,7 @@ def voc2yolo(lbl_dir: Union[PathStr, List[PathStr]], dst_dir: PathStr,
     Example:
 
     ```python
-    >>> from codeUtils.labelOperation import voc2yolo
+    >>> from lblConvert.converter import voc2yolo
     >>> voc2yolo(
     ...     lbl_dir=Path("datasets/coco128/xmls"),
     ...     dst_dir=Path("datasets/coco128/yolo3"),
@@ -1139,7 +1146,7 @@ def voc2coco(lbl_dir: Union[PathStr, List[PathStr]], dst_dir: PathStr,
     Example:
 
     ```python
-    >>> from codeUtils.labelOperation import voc2coco
+    >>> from lblConvert.converter import voc2coco
     >>> voc2coco(
     ...     lbl_dir=Path("datasets/coco128/xmls"),
     ...     dst_dir=Path("datasets/coco128/coco3"),
@@ -1228,7 +1235,7 @@ def coco2yolo(lbl_dir: Union[PathStr, List[PathStr]], dst_dir: PathStr):
     Example:
 
     ```python
-    >>> from codeUtils.labelOperation import coco2yolo
+    >>> from lblConvert.converter import coco2yolo
     >>> coco2yolo(
     ...     lbl_dir=["/Users/elfindan/datasets/coco128/coco/annotations/train2026.json"],
     ...     dst_dir=Path("/Users/elfindan/datasets/coco128/yolo4"),
@@ -1249,7 +1256,7 @@ def coco2labelme(lbl_dir: Union[PathStr, List[PathStr]], dst_dir: PathStr):
     Example:
 
     ```python
-    >>> from codeUtils.labelOperation import coco2labelme
+    >>> from lblConvert.converter import coco2labelme
     >>> coco2labelme(
     ...     lbl_dir=["datasets/coco128/coco/annotations"],
     ...     dst_dir=Path("datasets/coco128/jsons4"),
@@ -1270,7 +1277,7 @@ def coco2voc(lbl_dir: Union[PathStr, List[PathStr]], dst_dir: PathStr):
     Example:
 
     ```python
-    >>> from codeUtils.labelOperation import coco2voc
+    >>> from lblConvert.converter import coco2voc
     >>> coco2voc(
     ...     lbl_dir=["datasets/coco128/coco/annotations"],
     ...     dst_dir=Path("datasets/coco128/xmls4"),

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+
+name = "lblConvert"
+dynamic = ["version"]
+description = "自定义标签转换库."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+]
+dependencies = [
+    "opencv-python>=4.3.0.38", "lxml", "pyyaml", "httpx", "loguru",
+    "BeautifulSoup4", "tqdm", "natsort"
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "lblConvert.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lblConvert*"]
+
+[project.scripts]
+# 命令 = "包名.模块:函数"
+#code-tool = ""
+lbl = "lblConvert.scripts.cli:lbl"
